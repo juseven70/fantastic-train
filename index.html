@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none">
-    <title>対局タイマー PRO</title>
+    <title>対局タイマー + ランダムナンバー</title>
     <style>
         :root {
             --bg-color: #222;
@@ -11,7 +11,7 @@
             --pause-color: #ff9800;
             --win-color: #ffd700;
             --lose-color: #ff4b2b;
-            --text-main: #eee;
+            --number-color: #00d4ff;
         }
 
         body, html {
@@ -22,6 +22,26 @@
             user-select: none;
         }
 
+        /* 画面上部の数字表示エリア */
+        #number-display {
+            position: absolute;
+            top: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12vw;
+            font-weight: 900;
+            color: var(--number-color);
+            text-shadow: 0 0 20px rgba(0,212,255,0.5);
+            z-index: 10;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        /* リセット表示の時のサイズ調整 */
+        .reset-text {
+            font-size: 8vw !important;
+        }
+
         .container {
             display: flex;
             height: 100vh;
@@ -29,7 +49,6 @@
             position: relative;
         }
 
-        /* 左右のボタンエリア */
         .timer-side {
             flex: 1;
             display: flex;
@@ -41,68 +60,57 @@
             transition: all 0.3s;
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
+            padding-top: 10vh;
         }
 
         #side-left { background-color: #333; color: #aaa; }
         #side-right { background-color: #444; color: #aaa; }
 
-        /* 動いている方のスタイル */
         .active { background-color: var(--active-color) !important; color: white !important; }
+        .time-display { font-size: 15vw; font-weight: 800; font-family: monospace; }
+        .status-label { font-size: 3vw; font-weight: bold; opacity: 0.7; }
 
-        /* タイマー文字 */
-        .time-display { font-size: 18vw; font-weight: 800; font-family: monospace; }
-        .status-label { font-size: 5vw; font-weight: bold; margin-bottom: 10px; opacity: 0.7; }
-
-        /* 勝敗結果スタイル */
         .win { background-color: var(--win-color) !important; color: #000 !important; }
-        .win .status-label::after { content: " - WINNER"; }
         .lose { background-color: var(--lose-color) !important; color: white !important; }
-        .lose .status-label::after { content: " - TIME UP LOSE"; }
 
-        /* 中央コントロールパネル */
         .controls {
             position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
+            bottom: 10%; left: 50%;
+            transform: translateX(-50%);
             display: flex;
-            flex-direction: column;
             gap: 20px;
             z-index: 100;
         }
 
         .btn-ctrl {
-            padding: 15px 30px;
-            font-size: 1.2rem;
+            padding: 12px 24px;
+            font-size: 1rem;
             font-weight: bold;
             border: none;
             border-radius: 50px;
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            transition: transform 0.1s;
         }
-        .btn-ctrl:active { transform: scale(0.95); }
 
-        #pause-btn { background-color: var(--pause-color); color: white; width: 140px; }
-        #reset-btn { background-color: #666; color: white; width: 140px; }
-
-        .is-paused { opacity: 0.5; filter: grayscale(0.5); }
+        #pause-btn { background-color: var(--pause-color); color: white; }
+        #reset-btn { background-color: #666; color: white; }
     </style>
 </head>
 <body>
+
+    <div id="number-display">--</div>
 
     <div class="controls">
         <button id="pause-btn" class="btn-ctrl">PAUSE</button>
         <button id="reset-btn" class="btn-ctrl">RESET</button>
     </div>
 
-    <div class="container" id="main-container">
-        <!-- 左プレイヤー -->
+    <div class="container">
         <button id="side-left" class="timer-side">
             <div class="status-label">PLAYER 1</div>
             <div id="display-left" class="time-display">05:00</div>
         </button>
 
-        <!-- 右プレイヤー -->
         <button id="side-right" class="timer-side">
             <div class="status-label">PLAYER 2</div>
             <div id="display-right" class="time-display">05:00</div>
@@ -116,103 +124,4 @@
         let activePlayer = null; 
         let isPaused = false;
         let timerInterval = null;
-        let gameOver = false;
-
-        const sideL = document.getElementById('side-left');
-        const sideR = document.getElementById('side-right');
-        const dispL = document.getElementById('display-left');
-        const dispR = document.getElementById('display-right');
-        const pauseBtn = document.getElementById('pause-btn');
-        const resetBtn = document.getElementById('reset-btn');
-
-        function formatTime(s) {
-            const m = Math.floor(s / 60);
-            const sec = s % 60;
-            return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
-        }
-
-        function updateDisplay() {
-            dispL.textContent = formatTime(timeLeft1);
-            dispR.textContent = formatTime(timeLeft2);
-            
-            sideL.classList.toggle('active', activePlayer === 1 && !isPaused);
-            sideR.classList.toggle('active', activePlayer === 2 && !isPaused);
-        }
-
-        function endGame(loser) {
-            gameOver = true;
-            clearInterval(timerInterval);
-            if (loser === 1) {
-                sideL.classList.add('lose');
-                sideR.classList.add('win');
-                dispL.textContent = "LOSE";
-                dispR.textContent = "WIN";
-            } else {
-                sideR.classList.add('lose');
-                sideL.classList.add('win');
-                dispR.textContent = "LOSE";
-                dispL.textContent = "WIN";
-            }
-        }
-
-        function tick() {
-            if (isPaused || gameOver) return;
-            if (activePlayer === 1) {
-                timeLeft1--;
-                if (timeLeft1 <= 0) endGame(1);
-            } else if (activePlayer === 2) {
-                timeLeft2--;
-                if (timeLeft2 <= 0) endGame(2);
-            }
-            updateDisplay();
-        }
-
-        function switchPlayer(toPlayer) {
-            if (gameOver) return;
-            isPaused = false;
-            pauseBtn.textContent = "PAUSE";
-            activePlayer = toPlayer;
-            
-            if (!timerInterval) {
-                timerInterval = setInterval(tick, 1000);
-            }
-            updateDisplay();
-        }
-
-        // 左側が押されたら「右」を動かす
-        sideL.addEventListener('click', () => {
-            if (activePlayer === 2 && !isPaused) return; // すでに相手の番なら無視
-            switchPlayer(2);
-        });
-
-        // 右側が押されたら「左」を動かす
-        sideR.addEventListener('click', () => {
-            if (activePlayer === 1 && !isPaused) return;
-            switchPlayer(1);
-        });
-
-        // 一時停止ボタン
-        pauseBtn.addEventListener('click', () => {
-            if (gameOver || activePlayer === null) return;
-            isPaused = !isPaused;
-            pauseBtn.textContent = isPaused ? "RESUME" : "PAUSE";
-            updateDisplay();
-        });
-
-        // リセット
-        resetBtn.addEventListener('click', () => {
-            clearInterval(timerInterval);
-            timerInterval = null;
-            timeLeft1 = INITIAL_TIME;
-            timeLeft2 = INITIAL_TIME;
-            activePlayer = null;
-            isPaused = false;
-            gameOver = false;
-            pauseBtn.textContent = "PAUSE";
-            sideL.className = 'timer-side';
-            sideR.className = 'timer-side';
-            updateDisplay();
-        });
-    </script>
-</body>
-</html>
+        let ga
