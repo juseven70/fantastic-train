@@ -6,47 +6,45 @@
     <title>対局タイマー + ランダムナンバー</title>
     <style>
         :root {
-            --bg-color: #222;
-            --active-color: #4CAF50;
-            --pause-color: #ff9800;
-            --win-color: #ffd700;
-            --lose-color: #ff4b2b;
-            --number-color: #00d4ff;
+            --bg-color: #1a1a1a;
+            --active-color: #2ecc71;
+            --pause-color: #f39c12;
+            --win-color: #f1c40f;
+            --lose-color: #e74c3c;
+            --number-color: #3498db;
         }
 
         body, html {
             margin: 0; padding: 0; height: 100%;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Avenir', sans-serif;
             background-color: var(--bg-color);
             overflow: hidden;
             user-select: none;
         }
 
-        /* 画面上部の数字表示エリア */
+        /* 上部の数字表示 */
         #number-display {
             position: absolute;
-            top: 5%;
+            top: 10%;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 12vw;
+            font-size: 15vw;
             font-weight: 900;
             color: var(--number-color);
-            text-shadow: 0 0 20px rgba(0,212,255,0.5);
+            text-shadow: 0 0 30px rgba(52, 152, 219, 0.4);
             z-index: 10;
             pointer-events: none;
-            white-space: nowrap;
         }
 
-        /* リセット表示の時のサイズ調整 */
         .reset-text {
-            font-size: 8vw !important;
+            font-size: 8vw !important; /* RESET表示の時は文字を少し小さく */
+            color: #fff !important;
         }
 
         .container {
             display: flex;
             height: 100vh;
             width: 100vw;
-            position: relative;
         }
 
         .timer-side {
@@ -57,25 +55,26 @@
             align-items: center;
             border: none;
             outline: none;
-            transition: all 0.3s;
+            transition: background-color 0.2s;
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
-            padding-top: 10vh;
+            padding-top: 15vh;
         }
 
-        #side-left { background-color: #333; color: #aaa; }
-        #side-right { background-color: #444; color: #aaa; }
+        #side-left { background-color: #2c3e50; color: #95a5a6; }
+        #side-right { background-color: #34495e; color: #95a5a6; border-left: 1px solid #222; }
 
         .active { background-color: var(--active-color) !important; color: white !important; }
-        .time-display { font-size: 15vw; font-weight: 800; font-family: monospace; }
-        .status-label { font-size: 3vw; font-weight: bold; opacity: 0.7; }
+        .time-display { font-size: 15vw; font-weight: bold; font-family: 'Courier New', monospace; }
+        .status-label { font-size: 3vw; font-weight: bold; opacity: 0.6; margin-bottom: 10px; }
 
         .win { background-color: var(--win-color) !important; color: #000 !important; }
         .lose { background-color: var(--lose-color) !important; color: white !important; }
 
+        /* 中央コントロール */
         .controls {
             position: absolute;
-            bottom: 10%; left: 50%;
+            bottom: 8%; left: 50%;
             transform: translateX(-50%);
             display: flex;
             gap: 20px;
@@ -83,17 +82,17 @@
         }
 
         .btn-ctrl {
-            padding: 12px 24px;
-            font-size: 1rem;
+            padding: 15px 30px;
+            font-size: 1.2rem;
             font-weight: bold;
             border: none;
             border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            background-color: #555;
+            color: white;
         }
-
-        #pause-btn { background-color: var(--pause-color); color: white; }
-        #reset-btn { background-color: #666; color: white; }
+        #pause-btn { background-color: var(--pause-color); }
     </style>
 </head>
 <body>
@@ -129,28 +128,30 @@
         let numberPool = [];
         const numDisplay = document.getElementById('number-display');
 
-        // 数字セットの初期化
+        // 山札（40枚）を作成・シャッフルする関数
         function initNumberPool() {
             numberPool = [];
+            // 2から11までを各4回ずつ追加
             for (let i = 2; i <= 11; i++) {
                 for (let j = 0; j < 4; j++) {
                     numberPool.push(i);
                 }
             }
-            // フィッシャー・イェーツのシャッフル
+            // シャッフル（Fisher-Yates法）
             for (let i = numberPool.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [numberPool[i], numberPool[j]] = [numberPool[j], numberPool[i]];
             }
+            console.log("新しい山札を用意しました（40枚）");
         }
 
-        // 数字を取得する関数
+        // 山札から1枚引く関数
         function drawNextNumber() {
-            // もし山札が空なら、新しく作って「リセット＋最初の数字」を返す
             if (numberPool.length === 0) {
+                // 山札が空になったらリセット
                 initNumberPool();
                 const nextVal = numberPool.pop();
-                numDisplay.classList.add('reset-text'); // 文字を少し小さくする
+                numDisplay.classList.add('reset-text');
                 return `RESET: ${nextVal}`;
             }
             
@@ -184,15 +185,11 @@
             gameOver = true;
             clearInterval(timerInterval);
             if (loser === 1) {
-                sideL.classList.add('lose');
-                sideR.classList.add('win');
-                dispL.textContent = "LOSE";
-                dispR.textContent = "WIN";
+                sideL.classList.add('lose'); sideR.classList.add('win');
+                dispL.textContent = "LOSE"; dispR.textContent = "WIN";
             } else {
-                sideR.classList.add('lose');
-                sideL.classList.add('win');
-                dispR.textContent = "LOSE";
-                dispL.textContent = "WIN";
+                sideR.classList.add('lose'); sideL.classList.add('win');
+                dispR.textContent = "LOSE"; dispL.textContent = "WIN";
             }
         }
 
@@ -210,17 +207,11 @@
 
         function switchPlayer(toPlayer) {
             if (gameOver) return;
-            
-            // 数字を表示（山札が切れたらRESETと一緒に次の数が出る）
             numDisplay.textContent = drawNextNumber();
-
             isPaused = false;
             pauseBtn.textContent = "PAUSE";
             activePlayer = toPlayer;
-            
-            if (!timerInterval) {
-                timerInterval = setInterval(tick, 1000);
-            }
+            if (!timerInterval) timerInterval = setInterval(tick, 1000);
             updateDisplay();
         }
 
@@ -260,6 +251,7 @@
             updateDisplay();
         });
 
+        // 起動時に最初の山札を作成
         initNumberPool();
     </script>
 </body>
