@@ -24,14 +24,13 @@
             user-select: none;
         }
 
-        /* モード設定パネル（画面上部に配置） */
+        /* モード設定パネル（画面上部） */
         #setup-panel {
             position: absolute;
-            top: 2%;
-            left: 50%;
+            top: 2%; left: 50%;
             transform: translateX(-50%);
             z-index: 20;
-            background: rgba(0,0,0,0.85);
+            background: rgba(0,0,0,0.9);
             padding: 15px 20px;
             border-radius: 12px;
             border: 1px solid #444;
@@ -39,52 +38,44 @@
             text-align: center;
             width: 300px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: opacity 0.3s, transform 0.3s;
         }
-        .setup-row { margin: 10px 0; display: flex; align-items: center; justify-content: space-between; }
-        .game-started #setup-panel { display: none; } /* ゲーム開始で非表示 */
 
-        /* 中央のランダム数字（設定パネルの下に配置） */
+        /* 【重要】スタートしたら非表示にする設定 */
+        .game-started #setup-panel {
+            opacity: 0;
+            pointer-events: none;
+            transform: translate(-50%, -20px);
+        }
+
+        /* 中央のランダム数字 */
         #number-display {
             position: absolute;
-            top: 22%; /* パネルと被らないよう調整 */
-            left: 50%;
+            top: 25%; left: 50%;
             transform: translateX(-50%);
-            font-size: 15vw;
-            font-weight: 900;
+            font-size: 15vw; font-weight: 900;
             color: var(--number-color);
             text-shadow: 0 0 25px rgba(52, 152, 219, 0.4);
-            z-index: 10;
-            pointer-events: none;
+            z-index: 10; pointer-events: none;
         }
 
         #reset-label {
             position: absolute;
-            top: 38%;
-            left: 50%;
+            top: 42%; left: 50%;
             transform: translateX(-50%);
-            font-size: 4vw;
-            font-weight: bold;
-            color: #fff;
+            font-size: 4vw; font-weight: bold; color: #fff;
             background: rgba(255,255,255,0.2);
-            padding: 2px 15px;
-            border-radius: 10px;
-            z-index: 10;
-            display: none;
-            pointer-events: none;
+            padding: 2px 15px; border-radius: 10px;
+            z-index: 10; display: none; pointer-events: none;
         }
 
         .container { display: flex; height: 100vh; width: 100vw; }
 
         .timer-side {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            position: relative;
-            padding-top: 20vh;
+            flex: 1; display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            cursor: pointer; transition: background-color 0.3s;
+            position: relative; padding-top: 20vh;
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -100,6 +91,7 @@
         .time-val { font-size: 14vw; line-height: 1; margin: 5px 0; }
         .separator { font-size: 10vw; margin: 0 5px; }
 
+        /* スタート前の調整ボタン */
         .adjust-btn {
             background: none; border: none; color: var(--arrow-color);
             font-size: 5vw; padding: 5px 15px; cursor: pointer;
@@ -119,7 +111,7 @@
         }
         #pause-btn { background-color: var(--pause-color); }
 
-        /* ダメージ演出 */
+        /* アタックダメージ演出 */
         @keyframes damageFlash {
             from { color: var(--attack-color); transform: scale(1.1); }
             to { color: inherit; transform: scale(1); }
@@ -127,7 +119,7 @@
         .damaged { animation: damageFlash 0.5s ease; }
     </style>
 </head>
-<body>
+<body id="body-root">
 
     <div id="number-display">--</div>
     <div id="reset-label">リセット</div>
@@ -210,6 +202,7 @@
         const numDisplay = document.getElementById('number-display');
         const resetLabel = document.getElementById('reset-label');
         const mainUI = document.getElementById('main-ui');
+        const bodyRoot = document.getElementById('body-root');
 
         function initPool() {
             numberPool = [];
@@ -251,14 +244,15 @@
             document.getElementById('side-left').classList.toggle('active', activePlayer === 1 && !isPaused);
             document.getElementById('side-right').classList.toggle('active', activePlayer === 2 && !isPaused);
 
-            if (gameStarted) mainUI.classList.add('game-started');
-            else mainUI.classList.remove('game-started');
+            // スタート状態をbodyに付与してCSSでコントロール
+            if (gameStarted) bodyRoot.classList.add('game-started');
+            else bodyRoot.classList.remove('game-started');
         }
 
         function onSideClick(targetPlayer) {
             if (gameOver) return;
 
-            // アタック判定
+            // アタック判定 (ナンバーアタック有効時のみ)
             if (gameStarted && !isPaused) {
                 const isAttackOn = document.getElementById('attack-toggle').checked;
                 const multiplier = parseInt(document.getElementById('attack-mult').value);
@@ -277,7 +271,11 @@
                 }
             }
 
-            if (!gameStarted) { gameStarted = true; initPool(); }
+            // ゲームスタート処理
+            if (!gameStarted) {
+                gameStarted = true;
+                initPool();
+            }
 
             const result = getNextNumber();
             numDisplay.textContent = result.num;
