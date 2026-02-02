@@ -1,11 +1,211 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>電卓</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>対局タイマー (5分)</title>
+    <style>
+        /* 全体のレイアウト */
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* ボタンの共通スタイル */
+        .timer-btn {
+            flex: 1;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* タイマーの数字 */
+        .time-display {
+            font-size: 15vw;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        /* ラベル（Player 1 / 2） */
+        .label {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            pointer-events: none;
+        }
+
+        /* 左側の色設定 */
+        #btn-left {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        /* 右側の色設定 */
+        #btn-right {
+            background-color: #e0e0e0;
+            color: #333;
+            border-left: 2px solid #ccc;
+        }
+
+        /* 実行中のボタンの色 */
+        .active {
+            background-color: #4CAF50 !important;
+            color: white !important;
+        }
+
+        /* 停止中の強調（オプション） */
+        .waiting {
+            background-color: #ddd !important;
+        }
+
+        /* 時間切れの色 */
+        .time-up {
+            background-color: #ff4b2b !important;
+            color: white !important;
+        }
+
+        /* リセットボタン */
+        #reset-btn {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            font-size: 1rem;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 10;
+        }
+    </style>
 </head>
 <body>
-  <h1>GitHub Pages テスト</h1>
-  <p>表示できたら成功！</p>
+
+    <button id="reset-btn">RESET</button>
+
+    <div class="container">
+        <!-- 左プレイヤー用 -->
+        <button id="btn-left" class="timer-btn">
+            <div class="label">PLAYER 1</div>
+            <div id="display-left" class="time-display">05:00</div>
+        </button>
+
+        <!-- 右プレイヤー用 -->
+        <button id="btn-right" class="timer-btn">
+            <div class="label">PLAYER 2</div>
+            <div id="display-right" class="time-display">05:00</div>
+        </button>
+    </div>
+
+    <script>
+        const INITIAL_TIME = 5 * 60; // 5分（秒単位）
+        let timeLeft1 = INITIAL_TIME;
+        let timeLeft2 = INITIAL_TIME;
+        let activePlayer = null; // 1 or 2
+        let timerInterval = null;
+
+        const btnLeft = document.getElementById('btn-left');
+        const btnRight = document.getElementById('btn-right');
+        const displayLeft = document.getElementById('display-left');
+        const displayRight = document.getElementById('display-right');
+        const resetBtn = document.getElementById('reset-btn');
+
+        // 時間を 00:00 形式に変換
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+        // 画面更新
+        function updateDisplay() {
+            displayLeft.textContent = formatTime(timeLeft1);
+            displayRight.textContent = formatTime(timeLeft2);
+
+            // アクティブな方にクラスを付与
+            btnLeft.classList.toggle('active', activePlayer === 1);
+            btnRight.classList.toggle('active', activePlayer === 2);
+            
+            if (timeLeft1 <= 0) btnLeft.classList.add('time-up');
+            if (timeLeft2 <= 0) btnRight.classList.add('time-up');
+        }
+
+        // タイマー開始
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (activePlayer === 1) {
+                    timeLeft1--;
+                    if (timeLeft1 <= 0) {
+                        timeLeft1 = 0;
+                        stopTimer();
+                    }
+                } else if (activePlayer === 2) {
+                    timeLeft2--;
+                    if (timeLeft2 <= 0) {
+                        timeLeft2 = 0;
+                        stopTimer();
+                    }
+                }
+                updateDisplay();
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        // 左ボタンが押されたとき
+        btnLeft.addEventListener('click', () => {
+            if (timeLeft1 <= 0 || timeLeft2 <= 0) return;
+            
+            // 左が動いている、または開始前なら「右」をスタートさせる
+            activePlayer = 2;
+            startTimer();
+            updateDisplay();
+        });
+
+        // 右ボタンが押されたとき
+        btnRight.addEventListener('click', () => {
+            if (timeLeft1 <= 0 || timeLeft2 <= 0) return;
+
+            // 右が動いている、または開始前なら「左」をスタートさせる
+            activePlayer = 1;
+            startTimer();
+            updateDisplay();
+        });
+
+        // リセット処理
+        resetBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            stopTimer();
+            timeLeft1 = INITIAL_TIME;
+            timeLeft2 = INITIAL_TIME;
+            activePlayer = null;
+            btnLeft.classList.remove('time-up', 'active');
+            btnRight.classList.remove('time-up', 'active');
+            updateDisplay();
+        });
+
+        // 初期表示
+        updateDisplay();
+    </script>
 </body>
 </html>
