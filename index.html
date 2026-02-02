@@ -7,10 +7,10 @@
     <style>
         :root {
             --bg-color: #1a1a1a;
-            --active-color: #2ecc71;
+            --active-color: #4CAF50;
             --pause-color: #f39c12;
-            --win-color: #f1c40f;
-            --lose-color: #e74c3c;
+            --win-color: #2ecc71;  /* WINを緑に変更 */
+            --lose-color: #ff7675; /* LOSEを薄い赤に変更 */
             --number-color: #3498db;
         }
 
@@ -37,7 +37,7 @@
         }
 
         .reset-text {
-            font-size: 8vw !important; /* RESET表示の時は文字を少し小さく */
+            font-size: 8vw !important;
             color: #fff !important;
         }
 
@@ -68,7 +68,8 @@
         .time-display { font-size: 15vw; font-weight: bold; font-family: 'Courier New', monospace; }
         .status-label { font-size: 3vw; font-weight: bold; opacity: 0.6; margin-bottom: 10px; }
 
-        .win { background-color: var(--win-color) !important; color: #000 !important; }
+        /* WIN / LOSE スタイル */
+        .win { background-color: var(--win-color) !important; color: white !important; }
         .lose { background-color: var(--lose-color) !important; color: white !important; }
 
         /* 中央コントロール */
@@ -128,33 +129,26 @@
         let numberPool = [];
         const numDisplay = document.getElementById('number-display');
 
-        // 山札（40枚）を作成・シャッフルする関数
         function initNumberPool() {
             numberPool = [];
-            // 2から11までを各4回ずつ追加
             for (let i = 2; i <= 11; i++) {
                 for (let j = 0; j < 4; j++) {
                     numberPool.push(i);
                 }
             }
-            // シャッフル（Fisher-Yates法）
             for (let i = numberPool.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [numberPool[i], numberPool[j]] = [numberPool[j], numberPool[i]];
             }
-            console.log("新しい山札を用意しました（40枚）");
         }
 
-        // 山札から1枚引く関数
         function drawNextNumber() {
             if (numberPool.length === 0) {
-                // 山札が空になったらリセット
                 initNumberPool();
                 const nextVal = numberPool.pop();
                 numDisplay.classList.add('reset-text');
                 return `RESET: ${nextVal}`;
             }
-            
             numDisplay.classList.remove('reset-text');
             return numberPool.pop();
         }
@@ -251,7 +245,6 @@
             updateDisplay();
         });
 
-        // 起動時に最初の山札を作成
         initNumberPool();
     </script>
 </body>
